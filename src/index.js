@@ -75,7 +75,7 @@ export default function ({ types: t }) {
                 newExpression = callArgs[item];
               }
 
-              if (newExpression && t.isIdentifier(newExpression.callee) && newExpression.callee.name === 'Promise') {
+              if (newExpression && t.isIdentifier(newExpression.callee, { name: 'Promise' })) {
                 args = newExpression.arguments;
                 const id = path.scope.generateUidIdentifier('qPromise');
                 const newNode = generateAst(args, id);
