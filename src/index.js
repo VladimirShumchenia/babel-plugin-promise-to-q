@@ -38,7 +38,6 @@ export default function ({ types: t }) {
       ExpressionStatement (path) {
         const first = path.node;
         let newExpression;
-        let promiseIdentifier;
         let args;
         if (first.type === 'ExpressionStatement') {
           if (first.expression.type === 'NewExpression') {
@@ -51,7 +50,6 @@ export default function ({ types: t }) {
         function processNewExpression () {
           newExpression = first.expression;
           if (newExpression.callee && newExpression.callee.type === 'Identifier' && newExpression.callee.name === 'Promise') {
-            promiseIdentifier = newExpression.callee;
             args = newExpression.arguments;
             const newNode = generateAst(args);
             path.replaceWith(newNode);
@@ -62,16 +60,18 @@ export default function ({ types: t }) {
           let callArgs = first.expression.arguments;
           if (callArgs && callArgs.length) {
             for (const item in callArgs) {
-              if (callArgs[item] && callArgs[item].type === 'NewExpression') {
+              newExpression = null;
+
+              if (t.isNewExpression(callArgs[item])) {
                 newExpression = callArgs[item];
-                if (newExpression.callee && newExpression.callee.type === 'Identifier' && newExpression.callee.name === 'Promise') {
-                  promiseIdentifier = newExpression.callee;
-                  args = newExpression.arguments;
-                  const id = path.scope.generateUidIdentifier('qPromise');
-                  const newNode = generateAst(args, id);
-                  path.insertBefore(newNode);
-                  callArgs[item] = id;
-                }
+              }
+
+              if (newExpression && t.isIdentifier(newExpression.callee) && newExpression.callee.name === 'Promise') {
+                args = newExpression.arguments;
+                const id = path.scope.generateUidIdentifier('qPromise');
+                const newNode = generateAst(args, id);
+                path.insertBefore(newNode);
+                callArgs[item] = id;
               }
             }
           }
