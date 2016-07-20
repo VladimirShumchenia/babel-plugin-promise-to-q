@@ -1,5 +1,6 @@
 {
-  "version": "0.0.0",
+  "name": "babel-plugin-promise-to-q",
+  "version": "1.0.0",
   "description": "Turns native promises into angular $q service",
   "repository": "justindfuller/babel-plugin-promise-to-q",
   "author": "Justin Fuller <justindanielfuller@gmail.com>",
