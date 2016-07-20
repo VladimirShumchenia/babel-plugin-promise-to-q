@@ -32,5 +32,8 @@
     "ghooks": {
       "pre-commit": "npm run clean && npm run build"
     }
+  },
+  "dependencies": {
+    "babel-register": "^6.9.0"
   }
 }

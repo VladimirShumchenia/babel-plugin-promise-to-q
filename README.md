@@ -2,6 +2,8 @@
 
 Turns native promises into angular $q service
 
+[![Build Status](https://travis-ci.org/JustinDFuller/babel-plugin-promise-to-q.svg?branch=master)](https://travis-ci.org/JustinDFuller/babel-plugin-promise-to-q)
+
 ## Why?
 
 Babel uses native browser promises, which in most cases are perfectly fine, but they can cause some problems if you are using babel with Angular 1. Since Angular already relies on the $q service, this plugin converts the native browser promises to also use the $q service. This eliminates $digest problems that happen when mixing the two types of promises.
