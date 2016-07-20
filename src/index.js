@@ -132,6 +132,23 @@ export default function ({ types: t }) {
             }
           }
         }
+      },
+
+      ObjectExpression (path) {
+        const properties = path.node.properties;
+        for (const item of properties) {
+          if (t.isNewExpression(item.value) && t.isIdentifier(item.value.callee, { name: 'Promise' })) {
+            const args = item.value.arguments;
+            if (args && args.length) {
+              for (const arg of args) {
+                if (t.isFunctionExpression(arg) || t.isArrowFunctionExpression(arg)) {
+                  const newNode = generateAst(arg);
+                  console.log(generate(newNode).code);
+                }
+              }
+            }
+          }
+        }
       }
     }
   };
