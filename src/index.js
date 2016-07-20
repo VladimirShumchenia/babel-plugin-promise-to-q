@@ -1,6 +1,6 @@
-import template from "babel-template";
-import generate from "babel-generator";
-import * as t from "babel-types";
+import template from 'babel-template';
+import generate from 'babel-generator';
+import * as t from 'babel-types';
 
 const buildRequire = template(`
   $q(FUNCTION);
@@ -17,14 +17,14 @@ function generateAst (node) {
   }
 
   return buildRequire({
-    FUNCTION: func,
+    FUNCTION: func
   });
 }
 
-export default function({ types: t }) {
+export default function ({ types: t }) {
   return {
     visitor: {
-      ExpressionStatement(path) {
+      ExpressionStatement (path) {
         const first = path.node;
         let newExpression;
         let promiseIdentifier;
