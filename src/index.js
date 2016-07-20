@@ -58,7 +58,7 @@ export default function ({ types: t }) {
 
         function processNewExpression () {
           newExpression = first.expression;
-          if (newExpression.callee && newExpression.callee.type === 'Identifier' && newExpression.callee.name === 'Promise') {
+          if (t.isIdentifier(newExpression.callee, { name: 'Promise' })) {
             args = newExpression.arguments;
             const newNode = generateAst(args);
             path.replaceWith(newNode);
