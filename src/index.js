@@ -2,11 +2,15 @@ import template from 'babel-template';
 import generate from 'babel-generator';
 import * as t from 'babel-types';
 
-const buildRequire = template(`
+const qTemplate = template(`
   $q(FUNCTION);
 `);
 
-function generateAst (node) {
+const qTemplateAsFunctionArgument = template(`
+  var ID = $q(FUNCTION);
+`);
+
+function generateAst (node, identifier) {
   const args = node[0];
   let func;
 
@@ -16,9 +20,16 @@ function generateAst (node) {
     func = t.functionExpression(args.id, args.params, args.body, args.generator, args.async);
   }
 
-  return buildRequire({
-    FUNCTION: func
-  });
+  if (identifier) {
+    return qTemplateAsFunctionArgument({
+      FUNCTION: func,
+      ID: identifier
+    });
+  } else {
+    return qTemplate({
+      FUNCTION: func
+    });
+  }
 }
 
 export default function ({ types: t }) {
@@ -31,12 +42,37 @@ export default function ({ types: t }) {
         let args;
         if (first.type === 'ExpressionStatement') {
           if (first.expression.type === 'NewExpression') {
-            newExpression = first.expression;
-            if (newExpression.callee && newExpression.callee.type === 'Identifier' && newExpression.callee.name === 'Promise') {
-              promiseIdentifier = newExpression.callee;
-              args = newExpression.arguments;
-              const newNode = generateAst(args);
-              path.replaceWith(newNode);
+            processNewExpression();
+          } else if (first.expression.type === 'CallExpression') {
+            processCallExpression();
+          }
+        }
+
+        function processNewExpression () {
+          newExpression = first.expression;
+          if (newExpression.callee && newExpression.callee.type === 'Identifier' && newExpression.callee.name === 'Promise') {
+            promiseIdentifier = newExpression.callee;
+            args = newExpression.arguments;
+            const newNode = generateAst(args);
+            path.replaceWith(newNode);
+          }
+        }
+
+        function processCallExpression () {
+          let callArgs = first.expression.arguments;
+          if (callArgs && callArgs.length) {
+            for (const item in callArgs) {
+              if (callArgs[item] && callArgs[item].type === 'NewExpression') {
+                newExpression = callArgs[item];
+                if (newExpression.callee && newExpression.callee.type === 'Identifier' && newExpression.callee.name === 'Promise') {
+                  promiseIdentifier = newExpression.callee;
+                  args = newExpression.arguments;
+                  const id = path.scope.generateUidIdentifier('qPromise');
+                  const newNode = generateAst(args, id);
+                  path.insertBefore(newNode);
+                  callArgs[item] = id;
+                }
+              }
             }
           }
         }
