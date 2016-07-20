@@ -6,11 +6,19 @@ const qTemplate = template(`
   $q(FUNCTION);
 `);
 
-const qTemplateAsFunctionArgument = template(`
-  var ID = $q(FUNCTION);
-`);
+const qTemplateVariable = {
+  'var': template(`
+    var ID = $q(FUNCTION);
+  `),
+  'let': template(`
+    let ID = $q(FUNCTION);
+  `),
+  'const': template(`
+    const ID = $q(FUNCTION);
+  `)
+};
 
-function generateAst (node, identifier) {
+function generateAst (node, identifier, kind = 'var') {
   const args = node[0];
   let func;
 
@@ -20,15 +28,17 @@ function generateAst (node, identifier) {
     func = t.functionExpression(args.id, args.params, args.body, args.generator, args.async);
   }
 
-  if (identifier) {
-    return qTemplateAsFunctionArgument({
+  if (func && identifier) {
+    return qTemplateVariable[kind]({
       FUNCTION: func,
       ID: identifier
     });
-  } else {
+  } else if (func) {
     return qTemplate({
       FUNCTION: func
     });
+  } else {
+    return args;
   }
 }
 
@@ -72,6 +82,28 @@ export default function ({ types: t }) {
                 const newNode = generateAst(args, id);
                 path.insertBefore(newNode);
                 callArgs[item] = id;
+              }
+            }
+          }
+        }
+      },
+
+      VariableDeclaration (path) {
+        const first = path.node;
+        let declarations;
+        let promiseDeclaration;
+        let promiseFunction;
+        if (first && first.declarations && first.declarations.length) {
+          declarations = first.declarations;
+          for (let item in declarations) {
+            const declaration = declarations[item];
+            if (declaration.init && t.isNewExpression(declaration.init)) {
+              if (declaration.init.callee && declaration.init.callee.type === 'Identifier' && declaration.init.callee.name === 'Promise') {
+                promiseDeclaration = declaration.init;
+                if (promiseDeclaration.arguments) {
+                  const newNode = generateAst(promiseDeclaration.arguments, declarations[item].id, first.kind);
+                  path.replaceWith(newNode);
+                }
               }
             }
           }

@@ -27,5 +27,10 @@
     "async",
     "q",
     "babel-plugin"
-  ]
+  ],
+  "config": {
+    "ghooks": {
+      "pre-commit": "npm run clean && npm run build"
+    }
+  }
 }
