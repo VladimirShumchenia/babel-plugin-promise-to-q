@@ -6,6 +6,10 @@ const qTemplate = template(`
   $q(FUNCTION);
 `);
 
+const qTemplateMemberExpression = template(`
+  OBJNAME.PROPNAME = $q(FUNCTION);
+`);
+
 const qTemplateVariable = {
   'var': template(`
     var ID = $q(FUNCTION);
@@ -18,8 +22,8 @@ const qTemplateVariable = {
   `)
 };
 
-function generateAst (node, identifier, kind = 'var') {
-  const args = node[0];
+function generateAst (node, identifier, kind = 'var', objName, propName) {
+  const args = Array.isArray(node) ? node[0] : node;
   let func;
 
   if (t.isArrowFunctionExpression(args)) {
@@ -28,7 +32,13 @@ function generateAst (node, identifier, kind = 'var') {
     func = t.functionExpression(args.id, args.params, args.body, args.generator, args.async);
   }
 
-  if (func && identifier) {
+  if (func && objName && propName) {
+    return qTemplateMemberExpression({
+      FUNCTION: func,
+      OBJNAME: t.identifier(objName),
+      PROPNAME: t.identifier(propName)
+    });
+  } else if (func && identifier) {
     return qTemplateVariable[kind]({
       FUNCTION: func,
       ID: identifier
@@ -104,6 +114,21 @@ export default function ({ types: t }) {
                   path.replaceWith(newNode);
                 }
               }
+            }
+          }
+        }
+      },
+
+      AssignmentExpression (path) {
+        if (path && path.node && path.node.right && t.isNewExpression(path.node.right)) {
+          const args = path.node.right.arguments;
+          const objName = path.node.left.object.name;
+          const propName = path.node.left.property.name;
+          for (var item in args) {
+            const argItem = args[item];
+            if (t.isFunctionExpression(argItem)) {
+              const newNode = generateAst(argItem, false, false, objName, propName);
+              path.replaceWith(newNode);
             }
           }
         }
