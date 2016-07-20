@@ -49,12 +49,11 @@ export default function ({ types: t }) {
         const first = path.node;
         let newExpression;
         let args;
-        if (first.type === 'ExpressionStatement') {
-          if (first.expression.type === 'NewExpression') {
-            processNewExpression();
-          } else if (first.expression.type === 'CallExpression') {
-            processCallExpression();
-          }
+
+        if (t.isNewExpression(first.expression)) {
+          processNewExpression();
+        } else if (t.isCallExpression(first.expression)) {
+          processCallExpression();
         }
 
         function processNewExpression () {
