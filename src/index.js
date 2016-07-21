@@ -19,6 +19,9 @@ const qTemplateVariable = {
   `),
   'const': template(`
     const ID = $q(FUNCTION);
+  `),
+  'objectExpression': template(`
+    NAME: $q(FUNCTION)
   `)
 };
 
@@ -38,6 +41,12 @@ function generateAst (node, identifier, kind = 'var', objName, propName) {
       OBJNAME: t.identifier(objName),
       PROPNAME: t.identifier(propName)
     });
+  } else if (func && objName) {
+    console.log(objName);
+    return qTemplateVariable.objectExpression({
+      FUNCTION: func,
+      NAME: t.identifier(objName)
+    });
   } else if (func && identifier) {
     return qTemplateVariable[kind]({
       FUNCTION: func,
@@ -50,6 +59,12 @@ function generateAst (node, identifier, kind = 'var', objName, propName) {
   } else {
     return args;
   }
+}
+
+function generateObjectMethod (callee, args) {
+  const func = t.callExpression(callee, args);
+  func.callee.name = '$q';
+  return func;
 }
 
 export default function ({ types: t }) {
@@ -136,17 +151,12 @@ export default function ({ types: t }) {
 
       ObjectExpression (path) {
         const properties = path.node.properties;
-        for (const item of properties) {
-          if (t.isNewExpression(item.value) && t.isIdentifier(item.value.callee, { name: 'Promise' })) {
-            const args = item.value.arguments;
-            if (args && args.length) {
-              for (const arg of args) {
-                if (t.isFunctionExpression(arg) || t.isArrowFunctionExpression(arg)) {
-                  const newNode = generateAst(arg);
-                  console.log(generate(newNode).code);
-                }
-              }
-            }
+        for (let item in properties) {
+          if (t.isNewExpression(properties[item].value) && t.isIdentifier(properties[item].value.callee, { name: 'Promise' })) {
+            const callee = properties[item].value.callee;
+            const args = properties[item].value.arguments;
+            const newNode = generateObjectMethod(callee, args);
+            properties[item].value = newNode;
           }
         }
       }
