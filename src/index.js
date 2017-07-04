@@ -137,14 +137,20 @@ export default function ({ types: t }) {
       AssignmentExpression (path) {
         if (path && path.node && path.node.right && t.isNewExpression(path.node.right)) {
           const args = path.node.right.arguments;
-          const objName = path.node.left.object.name;
-          const propName = path.node.left.property.name;
-          for (var item in args) {
-            const argItem = args[item];
-            if (t.isFunctionExpression(argItem)) {
-              const newNode = generateAst(argItem, false, false, objName, propName);
-              path.replaceWith(newNode);
-            }
+          try {
+              const objName = path.node.left.object.name;
+              const propName = path.node.left.property.name;
+              for (var item in args) {
+                  const argItem = args[item];
+                  if (t.isFunctionExpression(argItem)) {
+                      const newNode = generateAst(argItem, false, false, objName, propName);
+                      path.replaceWith(newNode);
+                  }
+              }
+          } catch (e){
+            console.log(e);
+            console.log(path);
+            console.log(path.node.left);
           }
         }
       },
