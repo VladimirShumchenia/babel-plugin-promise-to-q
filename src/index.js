@@ -148,8 +148,6 @@ export default function ({ types: t }) {
                   }
               }
           } catch (e){
-            console.log(e);
-            console.log(path);
             console.log(path.node.left);
           }
         }
